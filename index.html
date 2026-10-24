@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Lockdown at the Whitewater Center: Unit 5 Escape Room</title>
+<title>Unit 5 Review and Escape Room: Functions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
@@ -147,6 +147,49 @@ fieldset{border:0; margin:0; padding:0; display:grid; gap:10px; min-width:0}
 .stars{font-size:2rem; color:#FFB066; letter-spacing:.1em}
 .cert p{margin:0; color:var(--pad-muted)}
 
+/* review */
+.rv-head{display:grid; gap:10px; padding:14px 0 8px}
+.rv-title{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:clamp(2rem,5.5vw,3.4rem); line-height:1.05; letter-spacing:-.02em; margin:0}
+.rv-head .sub{margin:0; color:var(--muted); max-width:62ch; font-size:1.1rem}
+.rv-nav{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 6px}
+.chip{padding:.5rem .95rem; border-radius:999px; border:2px solid var(--line); background:var(--panel); font-weight:700; cursor:pointer}
+.chip:hover{border-color:var(--blue)}
+.chip[aria-current="true"]{background:var(--orange); border-color:var(--orange); color:#0B1B33}
+.chip .tick{color:var(--good); font-weight:800}
+.chip[aria-current="true"] .tick{color:#0B1B33}
+.rv-count{margin:0; color:var(--muted); font-weight:600}
+.rv-topic{display:grid; gap:18px; padding:14px 0 10px}
+.rv-topic h2{font-size:clamp(1.6rem,3.8vw,2.4rem)}
+.lead{margin:0; font-size:1.15rem; color:var(--muted); max-width:62ch}
+.panel h3{font-size:1.25rem; margin-bottom:8px}
+.ideas ul{margin:0; padding-left:1.2rem; display:grid; gap:10px}
+.ideas li{max-width:72ch}
+.example{border-left:8px solid var(--blue)}
+.example p{margin:0 0 8px; max-width:72ch}
+.steps{margin:8px 0; padding-left:1.3rem; display:grid; gap:6px; max-width:72ch}
+.watch{color:var(--orange-text); font-weight:600}
+.qcs{display:grid; gap:14px}
+.qcs > h3{font-size:1.25rem}
+.qc{display:grid; gap:12px}
+.qc .prompt{margin:0; font-size:1.1rem; line-height:1.5}
+.explorer .ctl{display:grid; gap:6px; margin:12px 0}
+.explorer .ctl[hidden]{display:none}
+.explorer .ctl label{font-weight:700}
+.explorer input[type=range]{width:100%; max-width:520px; accent-color:var(--orange)}
+.explorer select{font:inherit; padding:.5rem .7rem; border-radius:10px; border:2px solid var(--line); background:var(--bg); color:var(--ink); max-width:240px}
+.modes{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px}
+.mode{display:flex; gap:8px; align-items:center; padding:.5rem .9rem; border:2px solid var(--line); border-radius:999px; cursor:pointer; font-weight:700; background:var(--panel)}
+.mode:hover{border-color:var(--blue)}
+.mode:has(input:checked){border-color:var(--blue); background:var(--blue-soft)}
+.mode input{accent-color:var(--blue)}
+#exSvg{width:100%; max-width:720px; height:auto; display:block; background:var(--panel); border-radius:12px; border:2px solid var(--line)}
+.read{margin:10px 0 0; font-size:1.1rem; font-weight:600; min-height:3.4em; max-width:62ch}
+.rv-foot{display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between}
+.cta{display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-top:10px}
+.cta h3{margin:0}
+.cta p{margin:2px 0 0; color:var(--muted); max-width:52ch}
+.prog .btn{margin-left:auto}
+
 @media (max-width:760px){
   .qgrid.has-fig{grid-template-columns:1fr}
   .wrap{padding:0 14px 40px}
@@ -161,6 +204,7 @@ fieldset{border:0; margin:0; padding:0; display:grid; gap:10px; min-width:0}
 <div id="app">
   <header class="hud" id="hud" hidden>
     <button class="btn small" id="btnMap" hidden>Back to the map</button>
+    <button class="btn small" id="btnReview" hidden>Review notes</button>
     <div class="hud-title">Lockdown at the Whitewater Center</div>
     <div class="hud-stats">
       <span>Time <b id="clock">0:00</b></span>
@@ -438,19 +482,20 @@ var ROOMS = [
 
 /* ---------- state ---------- */
 function fresh(){
-  return {screen:'start', name:'', sec:0, alarms:0, helps:0, doorTries:0, rooms:{}, curRoom:null, finalSec:0, finishedOn:''};
+  return {screen:'review', begun:false, reviewed:{}, name:'', sec:0, alarms:0, helps:0, doorTries:0, rooms:{}, curRoom:null, finalSec:0, finishedOn:''};
 }
 function load(){
   try{
     var raw = localStorage.getItem(KEY); if(!raw) return null;
     var s = JSON.parse(raw);
     if(!s || typeof s !== 'object' || typeof s.rooms !== 'object') return null;
-    return Object.assign(fresh(), s);
+    var f = Object.assign(fresh(), s); if(!f.reviewed || typeof f.reviewed !== 'object') f.reviewed = {}; if(f.screen !== 'start' && f.screen !== 'review') f.begun = true; return f;
   }catch(e){ return null; }
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 var S = load() || fresh();
-var cur = {room:null, resp:null, fb:null, solved:false, solvedIdx:0, armed:false};
+function newCur(){ return {room:null, resp:null, fb:null, solved:false, solvedIdx:0, armed:false, rvReturn:null, rv:{topic:0, checks:{}}, ex:{mode:'out', m:8, c:40}}; }
+var cur = newCur();
 
 function roomById(id){ for(var i = 0; i < ROOMS.length; i++) if(ROOMS[i].id === id) return ROOMS[i]; return null; }
 function rstate(room){ return S.rooms[room.id] || (S.rooms[room.id] = {q:{}}); }
@@ -517,7 +562,7 @@ function startHTML(){
   } else {
     h += '<form class="start-form" data-form="begin"><label for="nm">Your name</label>' +
          '<input class="txt" id="nm" maxlength="40" autocomplete="off" value="' + esc(S.name) + '">' +
-         '<div class="row"><button class="btn primary" type="submit">Begin escape</button></div></form>';
+         '<div class="row"><button class="btn primary" type="submit">Begin escape</button><button class="btn" type="button" data-act="review">Back to the review notes</button></div></form>';
   }
   return h + '</section>';
 }
@@ -581,7 +626,7 @@ function roomHTML(){
   var qd = room.qs[qi], st = qstate(room, qd), q = build(room, qd), locked = cur.solved;
   var last = qi === room.qs.length - 1;
   var h = '<div class="room-head"><h2 id="heading" tabindex="-1">' + room.name + '</h2><p class="story">' + room.story + '</p>' +
-    '<div class="prog">' + segsHTML(room, qi) + '<span>Question ' + (qi + 1) + ' of ' + room.qs.length + '</span></div></div>' +
+    '<div class="prog">' + segsHTML(room, qi) + '<span>Question ' + (qi + 1) + ' of ' + room.qs.length + '</span><button class="btn small" data-act="reviewtopic">Review this topic</button></div></div>' +
     '<article class="panel qcard"><div class="qgrid' + (q.fig ? ' has-fig' : '') + '"><div><p class="prompt">' + q.prompt + '</p></div>' + figHTML(q) + '</div>' +
     inputHTML(q, locked) +
     '<div aria-live="polite">' + feedbackHTML(q, st) + '</div><div class="row">';
@@ -618,18 +663,313 @@ function escapedHTML(){
     '<div class="row"><button class="btn" data-act="replay">' + (cur.armed ? 'Click again to erase this run' : 'Play again with new numbers') + '</button></div></div>';
 }
 
+/* ---------- review content ---------- */
+var ROOM_TOPIC = {booth:'meaning', shed:'notation', tower:'graphs', gauge:'domain', vault:'rules'};
+
+var REVIEW = [
+  {id:'meaning', short:'Meaning', title:'What function notation means',
+   lead:'Function notation is a short way to say “when the input is this, the output is that.”',
+   ideas:[
+     'In ' + I('f') + '(' + I('x') + ') = ' + I('y') + ', the letter ' + I('f') + ' names the function, the <strong>input</strong> goes inside the parentheses, and the <strong>output</strong> comes after the equals sign.',
+     'Always read it in context. If ' + I('p') + '(' + I('m') + ') is a puppy’s weight in pounds at ' + I('m') + ' months old, then ' + I('p') + '(8) = 55 means the puppy weighs 55 pounds when it is 8 months old.',
+     'Two questions that look alike are different. ' + I('p') + '(10) means <strong>evaluate</strong>: the input is 10, so find the output. ' + I('p') + '(' + I('m') + ') = 10 means <strong>solve</strong>: the output is 10, so find the input.',
+     'An inequality such as ' + I('A') + '(' + I('t') + ') &gt; ' + I('B') + '(' + I('t') + ') compares two outputs at the same input. It says City A’s population is greater than City B’s, ' + I('t') + ' years after 1990.'
+   ],
+   example:'<p>Function ' + I('K') + ' gives the kilometers an Amazon driver has driven after ' + I('h') + ' hours. What does ' + I('K') + '(3) = 52 mean?</p>' +
+     '<ol class="steps"><li>Find the input: 3 is inside the parentheses, so it is the number of hours.</li>' +
+     '<li>Find the output: 52 comes after the equals sign, so it is the number of kilometers.</li>' +
+     '<li>Say it in a sentence: after 3 hours, the driver has driven 52 kilometers.</li></ol>' +
+     '<p class="watch">Watch out: ' + I('K') + '(3) = 52 is a total distance after 3 hours, not a speed.</p>',
+   checks:[
+     {kind:'mc', prompt:'Function ' + I('T') + ' gives the temperature in °F, ' + I('h') + ' hours after noon. What does ' + I('T') + '(4) = 72 mean?',
+      options:['Four hours after noon, the temperature is 72°F.', 'Seventy-two hours after noon, the temperature is 4°F.', 'The temperature rises 72°F during the first 4 hours.'], correct:0,
+      explain:'The input 4 is hours after noon and the output 72 is the temperature in °F.'},
+     {kind:'mc', prompt:'Function ' + I('W') + ' gives the number of people at a park when the day’s high temperature is ' + I('t') + '. Which statement asks for the temperatures on days when 5000 people visited?',
+      options:[I('W') + '(5000)', I('W') + '(' + I('t') + ') = 5000', I('W') + '(' + I('t') + ') &gt; 5000', '5000(' + I('t') + ')'], correct:1,
+      explain:'The output is 5000 and the input ' + I('t') + ' is unknown, so you solve ' + I('W') + '(' + I('t') + ') = 5000. ' + I('W') + '(5000) would mean a day with a high of 5000 degrees.'}
+   ]},
+
+  {id:'notation', short:'Notation', title:'Writing statements in function notation',
+   lead:'Turn a sentence into notation by finding the function, the input, and the output.',
+   ideas:[
+     'Name the function, then decide which quantity is the input and which is the output.',
+     'Write the input inside the parentheses and the output after the equals sign. “After 10 hours the driver had driven 2400 kilometers” becomes ' + I('K') + '(10) = 2400.',
+     'To compare, put function values (outputs) on both sides of &gt;, &lt;, or =. “The puppy weighed more at 8 months than at 3 months” becomes ' + I('p') + '(8) &gt; ' + I('p') + '(3).',
+     'Common slip: writing 8 &gt; 3 compares the inputs, which says nothing about the puppy.',
+     'To say two functions agree at an input, use the same input in both: ' + I('A') + '(6) = ' + I('B') + '(6).'
+   ],
+   example:'<p>Function ' + I('f') + ' gives the pounds of flour left after ' + I('d') + ' days. Write this in function notation: 840 pounds remain after 11 days.</p>' +
+     '<ol class="steps"><li>Name the function: ' + I('f') + '.</li>' +
+     '<li>The input is the number of days, 11, so it goes in the parentheses: ' + I('f') + '(11).</li>' +
+     '<li>The output is the pounds remaining, 840, so it goes after the equals sign.</li>' +
+     '<li>Write the statement: ' + I('f') + '(11) = 840.</li></ol>',
+   checks:[
+     {kind:'mc', prompt:'Function ' + I('f') + ' gives the pounds of flour left after ' + I('d') + ' days. Which statement says that 600 pounds remain after 15 days?',
+      options:[I('f') + '(15) = 600', I('f') + '(600) = 15', I('f') + '(15) &gt; 600', '15(600)'], correct:0,
+      explain:'The input is 15 days and the output is 600 pounds, so ' + I('f') + '(15) = 600.'},
+     {kind:'mc', prompt:'Functions ' + I('A') + ' and ' + I('B') + ' give the populations of two cities ' + I('t') + ' years after 1990. Which statement says the cities had the same population 6 years after 1990?',
+      options:[I('A') + '(6) = ' + I('B') + '(6)', I('A') + '(' + I('t') + ') = 6 and ' + I('B') + '(' + I('t') + ') = 6', I('A') + '(6) + ' + I('B') + '(6) = 6', I('A') + ' = ' + I('B')], correct:0,
+      explain:'The same input, 6, goes into both functions, and the outputs are equal.'}
+   ]},
+
+  {id:'graphs', short:'Graphs', title:'Reading function graphs',
+   lead:'A graph shows every input and output at once. You read it by moving from one axis to the other.',
+   ideas:[
+     'To find ' + I('f') + '(' + I('a') + '): find ' + I('a') + ' on the horizontal axis, go straight up or down to the graph, then read across to the vertical axis.',
+     'To find the input for a given output, ' + I('f') + '(' + I('x') + ') = ' + I('c') + ': start at ' + I('c') + ' on the vertical axis, move across to the graph, then read down to the horizontal axis. There can be more than one answer.',
+     'The <strong>vertical intercept</strong> is the point where the graph crosses the vertical axis, (0, ' + I('f') + '(0)). It is the starting value, like the height a ball is dropped from.',
+     'The <strong>horizontal intercepts</strong> are the inputs that give an output of 0. For a bouncing ball, those are the times it is on the ground.',
+     'A <strong>maximum</strong> or <strong>minimum value</strong> is the highest or lowest output. The graph can reach it at more than one input, so check the whole graph.',
+     'Do not stretch a trend past the part of the graph you can see.'
+   ],
+   explorer:true,
+   example:'<p>The graph shows ' + I('f') + ', an airplane’s distance from the gate, in feet, ' + I('m') + ' minutes after leaving.</p>' +
+     '<ol class="steps"><li>Find ' + I('f') + '(12): at 12 minutes the graph is at 40 feet, so ' + I('f') + '(12) = 40.</li>' +
+     '<li>Is ' + I('f') + '(14) &lt; ' + I('f') + '(16)? ' + I('f') + '(14) = 40 and ' + I('f') + '(16) = 20. Since 40 is not less than 20, the statement is false.</li></ol>' +
+     '<p class="watch">Watch out: compare outputs (heights on the graph), not inputs (times).</p>',
+   checkFig:'ball',
+   checks:[
+     {kind:'mc', prompt:'The graph shows the height of a bouncing ball over time. What does the vertical intercept (0, 2) tell you?',
+      options:['The ball was dropped from a height of 2 meters.', 'The ball hits the ground at 2 seconds.', 'The ball reaches its lowest point after 2 seconds.'], correct:0,
+      explain:'At time 0 the height is 2 meters, so that is where the ball started.'},
+     {kind:'mc', prompt:'What do the horizontal intercepts of the ball’s graph represent?',
+      options:['The times when the ball is on the ground.', 'The height the ball was dropped from.', 'The highest point of each bounce.', 'The number of times the ball bounces.'], correct:0,
+      explain:'A horizontal intercept is an input that gives an output of 0, which here means a height of 0 meters: the ball is on the ground.'}
+   ]},
+
+  {id:'domain', short:'Domain and range', title:'Domain and range in context',
+   lead:'The domain is the set of inputs that make sense. The range is the set of outputs that make sense.',
+   ideas:[
+     'Ask what inputs are possible: can the input be a decimal, or only a whole number? What are the smallest and largest values? Then ask the same about the output.',
+     'Measured quantities such as time, temperature, and distance can be any decimal, so say “all real numbers from ___ to ___.” Counted quantities such as people or donuts are whole numbers, so say “all whole numbers from ___ to ___.”',
+     'On a graph, the domain is how far the graph stretches horizontally and the range is how far it stretches vertically. For the bouncing ball: domain 0 ≤ ' + I('t') + ' ≤ 2.4, range 0 ≤ ' + I('h') + ' ≤ 2.',
+     'Real situations add limits. Flour cannot go below 0 pounds, so for ' + I('f') + '(' + I('d') + ') = 1500 − 60' + I('d') + ' you set the output to 0 and solve: ' + I('d') + ' = 25. The domain is 0 ≤ ' + I('d') + ' ≤ 25.'
+   ],
+   example:'<p>Function ' + I('W') + ' gives the number of people at the Whitewater Center as a function of the day’s high temperature ' + I('t') + '. High temperatures went from 71.5°F to 99.3°F, and the most people on any day was 12,000.</p>' +
+     '<ol class="steps"><li>Input: temperature. It can be any decimal, so the domain is all real numbers from 71.5 to 99.3.</li>' +
+     '<li>Output: number of people. People are counted in whole numbers, and the fewest is 0, so the range is all whole numbers from 0 to 12,000.</li></ol>' +
+     '<p class="watch">Watch out: the domain starts at the lowest temperature, not at 0.</p>',
+   checks:[
+     {kind:'mc', prompt:'A bus holds at most 40 riders. Function ' + I('R') + ' gives the number of riders on the bus at a stop. Which range makes sense for ' + I('R') + '?',
+      options:['All real numbers from 0 to 40', 'All whole numbers from 0 to 40', 'All whole numbers from 1 to 41', 'All real numbers'], correct:1,
+      explain:'Riders are counted in whole numbers. There can be none (0) and no more than 40.'},
+     {kind:'num', prompt:'A shop starts with 1200 pounds of flour and uses 50 pounds each day, so ' + I('f') + '(' + I('d') + ') = 1200 − 50' + I('d') + '. The flour cannot go below 0 pounds. What is the greatest value of ' + I('d') + ' in the domain?', answer:24, placeholder:'Type a number of days',
+      explain:'Set 1200 − 50' + I('d') + ' = 0 to get ' + I('d') + ' = 24. The domain is 0 ≤ ' + I('d') + ' ≤ 24.'}
+   ]},
+
+  {id:'rules', short:'Rules and sequences', title:'Rules and sequences',
+   lead:'A rule tells you how to get the output from the input. A sequence is a function whose inputs are 1, 2, 3, and so on.',
+   ideas:[
+     'To <strong>evaluate</strong> a rule, replace the variable with the input. Check the units first: for ' + I('r') + '(' + I('d') + ') = 45' + I('d') + ' + 25 and 2 weeks, use ' + I('d') + ' = 14 days, so ' + I('r') + '(14) = 45(14) + 25 = 655.',
+     'To <strong>solve</strong> for the input, set the rule equal to the output. If ' + I('f') + '(' + I('d') + ') = 1500 − 60' + I('d') + ' and ' + I('f') + '(' + I('d') + ') = 840, then ' + I('d') + ' = 11: after 11 days, 840 pounds remain.',
+     'A sequence function such as ' + I('b') + '(' + I('n') + ') = 5' + I('n') + ' + 2 gives the ' + I('n') + 'th term. So ' + I('b') + '(3) = 17 is the 3rd term.',
+     'A <strong>recursive</strong> formula tells you how to get from one term to the next. ' + I('f') + '(1) = 8 and ' + I('f') + '(' + I('n') + ') = ' + I('f') + '(' + I('n') + ' − 1) + 9 means start at 8 and add 9 each time: 8, 17, 26, 35, 44. The common difference is 9.',
+     'An <strong>explicit</strong> formula jumps straight to any term: ' + I('f') + '(' + I('n') + ') = ' + I('f') + '(1) + (common difference)(' + I('n') + ' − 1).'
+   ],
+   example:'<p>Find the 85th term of the sequence with ' + I('f') + '(1) = 8 and ' + I('f') + '(' + I('n') + ') = ' + I('f') + '(' + I('n') + ' − 1) + 9.</p>' +
+     '<ol class="steps"><li>The common difference is 9 and the first term is 8.</li>' +
+     '<li>Write the explicit formula: ' + I('f') + '(' + I('n') + ') = 8 + 9(' + I('n') + ' − 1) = 9' + I('n') + ' − 1.</li>' +
+     '<li>Substitute 85: ' + I('f') + '(85) = 9(85) − 1 = 764.</li></ol>',
+   checks:[
+     {kind:'num', prompt:'The cost, in dollars, of renting a car is ' + I('r') + '(' + I('d') + ') = 35' + I('d') + ' + 20, where ' + I('d') + ' is the number of days. How much does it cost to rent the car for 2 weeks?', answer:510, placeholder:'Type a dollar amount',
+      explain:'2 weeks is 14 days. ' + I('r') + '(14) = 35(14) + 20 = 510, so the cost is $510.'},
+     {kind:'num', prompt:'A sequence is defined by ' + I('f') + '(1) = 4 and ' + I('f') + '(' + I('n') + ') = ' + I('f') + '(' + I('n') + ' − 1) + 6. What is ' + I('f') + '(10)?', answer:58, placeholder:'Type a number',
+      explain:'The explicit formula is ' + I('f') + '(' + I('n') + ') = 4 + 6(' + I('n') + ' − 1). Then ' + I('f') + '(10) = 4 + 6(9) = 58.'}
+   ]}
+];
+function topicIndex(id){ for(var i = 0; i < REVIEW.length; i++) if(REVIEW[i].id === id) return i; return -1; }
+function reviewedCount(){ return REVIEW.filter(function(t){ return S.reviewed[t.id]; }).length; }
+
+/* ---------- quick checks ---------- */
+function qcKey(t, i){ return t.id + '-' + i; }
+function qcState(key){ return cur.rv.checks[key] || (cur.rv.checks[key] = {resp:null, status:'idle', tries:0}); }
+function qcFind(key){
+  var p = key.lastIndexOf('-'), id = key.slice(0, p), i = +key.slice(p + 1), t = REVIEW[topicIndex(id)];
+  return {t:t, i:i, c:t.checks[i]};
+}
+function qcHTML(t, i){
+  var c = t.checks[i], key = qcKey(t, i), st = qcState(key), locked = st.status === 'good' || st.status === 'shown';
+  var h = '<p class="prompt">' + c.prompt + '</p>';
+  if(c.kind === 'mc'){
+    h += '<fieldset><legend class="sr">Choose one answer</legend>';
+    c.options.forEach(function(lab, oi){
+      var right = locked && oi === c.correct, checked = st.resp === String(oi);
+      h += '<label class="opt' + (right ? ' right' : '') + (locked ? ' disabled' : '') + '"><input type="radio" name="qc-' + key + '" value="' + oi + '"' +
+           (checked || right ? ' checked' : '') + (locked ? ' disabled' : '') + '><span>' + lab + '</span></label>';
+    });
+    h += '</fieldset>';
+  } else {
+    h += '<div class="answer-input"><label for="qcn-' + key + '">Your answer</label><input class="txt" id="qcn-' + key + '" data-qcnum="' + key +
+         '" type="text" inputmode="decimal" autocomplete="off" placeholder="' + esc(c.placeholder || '') + '" value="' + esc(st.resp || '') + '"' + (locked ? ' disabled' : '') + '></div>';
+  }
+  h += '<div aria-live="polite">';
+  if(st.status === 'good') h += '<div class="fb good"><strong class="t">Correct.</strong><p>' + c.explain + '</p></div>';
+  else if(st.status === 'shown') h += '<div class="fb reveal"><strong class="t">Here’s the answer.</strong><p>' + c.explain + '</p></div>';
+  else if(st.status === 'bad') h += '<div class="fb bad"><strong class="t">Not quite.</strong><p>Look back at the key ideas and the worked example, then try again.</p></div>';
+  else if(st.status === 'nudge') h += '<div class="fb nudge"><p>Choose or type an answer first.</p></div>';
+  h += '</div>';
+  if(!locked){
+    h += '<div class="row"><button class="btn primary" data-act="qc-check" data-key="' + key + '">Check</button>' +
+         (st.tries >= 2 ? '<button class="btn ghost" data-act="qc-show" data-key="' + key + '">Show the answer</button>' : '') + '</div>';
+  }
+  return h;
+}
+function qcRefresh(key, focusInput){
+  var f = qcFind(key), box = document.getElementById('qc-' + key);
+  if(box) box.innerHTML = qcHTML(f.t, f.i);
+  if(focusInput){ var inp = document.getElementById('qcn-' + key); if(inp){ inp.focus(); var l = inp.value.length; try{ inp.setSelectionRange(l, l); }catch(e){} } }
+}
+function qcCheck(key){
+  var f = qcFind(key), st = qcState(key), c = f.c;
+  var empty = st.resp === null || String(st.resp).trim() === '';
+  if(empty){ st.status = 'nudge'; qcRefresh(key, c.kind === 'num'); return; }
+  st.tries++;
+  var ok = c.kind === 'mc' ? st.resp === String(c.correct) : (function(){ var v = parseNum(st.resp); return v !== null && Math.abs(v - c.answer) < 1e-6; })();
+  st.status = ok ? 'good' : 'bad';
+  qcRefresh(key, c.kind === 'num' && !ok);
+  if(ok){
+    var allGood = f.t.checks.every(function(x, i){ return qcState(qcKey(f.t, i)).status === 'good'; });
+    if(allGood && !S.reviewed[f.t.id]){ S.reviewed[f.t.id] = true; save(); updateRvChrome(); }
+  }
+}
+function qcShow(key){ qcState(key).status = 'shown'; qcRefresh(key, false); }
+
+/* ---------- airplane explorer ---------- */
+var PLANE_PTS = [[0,0],[2,60],[7,60],[9,40],[15,40],[17,0]];
+function planeAt(m){
+  for(var i = 0; i < PLANE_PTS.length - 1; i++){
+    var a = PLANE_PTS[i], b = PLANE_PTS[i + 1];
+    if(m >= a[0] && m <= b[0]) return a[1] + (b[1] - a[1]) * (m - a[0]) / (b[0] - a[0]);
+  }
+  return 0;
+}
+function planeSolve(c){
+  var pts = [], ivs = [];
+  for(var i = 0; i < PLANE_PTS.length - 1; i++){
+    var a = PLANE_PTS[i], b = PLANE_PTS[i + 1];
+    if(a[1] === b[1]){ if(a[1] === c) ivs.push([a[0], b[0]]); }
+    else if(c >= Math.min(a[1], b[1]) && c <= Math.max(a[1], b[1])){ pts.push(a[0] + (c - a[1]) * (b[0] - a[0]) / (b[1] - a[1])); }
+  }
+  pts = pts.filter(function(x, i, arr){
+    for(var j = 0; j < ivs.length; j++){ if(x >= ivs[j][0] - 1e-9 && x <= ivs[j][1] + 1e-9) return false; }
+    return arr.findIndex(function(y){ return Math.abs(y - x) < 1e-9; }) === i;
+  });
+  return {pts:pts, ivs:ivs};
+}
+function fmtNum(x){ return Math.abs(x - Math.round(x)) < 1e-9 ? String(Math.round(x)) : 'about ' + (Math.round(x * 100) / 100); }
+
+function explorerHTML(){
+  var ex = cur.ex;
+  return '<div class="panel explorer"><h3>Try it: reading the airplane graph</h3>' +
+    '<p>The graph shows ' + I('f') + '(' + I('m') + '), the airplane’s distance from the gate, in feet, ' + I('m') + ' minutes after leaving the gate.</p>' +
+    '<div class="modes" role="radiogroup" aria-label="What do you want to find?">' +
+      '<label class="mode"><input type="radio" name="exmode" value="out"' + (ex.mode === 'out' ? ' checked' : '') + '><span>Find an output: ' + I('f') + '(' + I('m') + ')</span></label>' +
+      '<label class="mode"><input type="radio" name="exmode" value="in"' + (ex.mode === 'in' ? ' checked' : '') + '><span>Find the inputs for an output</span></label></div>' +
+    '<div class="ctl" id="exOut"' + (ex.mode === 'out' ? '' : ' hidden') + '><label for="exM">Minutes, ' + I('m') + ': <b id="exMv">' + ex.m + '</b></label>' +
+      '<input id="exM" type="range" min="0" max="17" step="1" value="' + ex.m + '"></div>' +
+    '<div class="ctl" id="exIn"' + (ex.mode === 'in' ? '' : ' hidden') + '><label for="exC">Distance, ' + I('f') + '(' + I('m') + '), in feet</label><select id="exC">' +
+      [0, 40, 50, 60].map(function(c){ return '<option value="' + c + '"' + (ex.c === c ? ' selected' : '') + '>' + c + ' feet</option>'; }).join('') + '</select></div>' +
+    '<svg id="exSvg" viewBox="0 0 620 370" role="img" aria-label="Graph of the airplane’s distance from the gate over time. The reading below the graph describes what is selected."></svg>' +
+    '<p class="read" id="exRead" aria-live="polite"></p></div>';
+}
+function drawExplorer(){
+  var svg = document.getElementById('exSvg'); if(!svg) return;
+  var ex = cur.ex;
+  function X(x){ return 56 + x * (540 / 18); }
+  function Y(y){ return 322 - y * (300 / 80); }
+  var s = '', i;
+  for(i = 0; i <= 18; i++) s += '<line x1="' + X(i) + '" x2="' + X(i) + '" y1="' + Y(0) + '" y2="' + Y(80) + '" style="stroke:var(--line)" stroke-width="' + (i % 2 ? 0.6 : 1) + '"/>';
+  for(i = 0; i <= 80; i += 10) s += '<line x1="' + X(0) + '" x2="' + X(18) + '" y1="' + Y(i) + '" y2="' + Y(i) + '" style="stroke:var(--line)" stroke-width="' + (i % 20 ? 0.6 : 1) + '"/>';
+  s += '<line x1="' + X(0) + '" x2="' + X(18) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" style="stroke:var(--ink)" stroke-width="2"/>' +
+       '<line x1="' + X(0) + '" x2="' + X(0) + '" y1="' + Y(0) + '" y2="' + Y(80) + '" style="stroke:var(--ink)" stroke-width="2"/>';
+  for(i = 0; i <= 18; i += 2) s += '<text x="' + X(i) + '" y="' + (Y(0) + 20) + '" text-anchor="middle" font-size="13" style="fill:var(--ink)">' + i + '</text>';
+  for(i = 20; i <= 80; i += 20) s += '<text x="' + (X(0) - 8) + '" y="' + (Y(i) + 4) + '" text-anchor="end" font-size="13" style="fill:var(--ink)">' + i + '</text>';
+  s += '<text x="' + X(9) + '" y="364" text-anchor="middle" font-size="14" font-weight="700" style="fill:var(--ink)">time (minutes)</text>' +
+       '<text transform="translate(14 ' + Y(40) + ') rotate(-90)" text-anchor="middle" font-size="14" font-weight="700" style="fill:var(--ink)">distance (feet)</text>';
+  s += '<polyline fill="none" style="stroke:var(--blue)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" points="' +
+       PLANE_PTS.map(function(p){ return X(p[0]) + ',' + Y(p[1]); }).join(' ') + '"/>';
+  var read = '';
+  if(ex.mode === 'out'){
+    var v = planeAt(ex.m);
+    s += '<line x1="' + X(ex.m) + '" x2="' + X(ex.m) + '" y1="' + Y(0) + '" y2="' + Y(v) + '" stroke="#F56600" stroke-width="2.5" stroke-dasharray="6 5"/>' +
+         '<line x1="' + X(0) + '" x2="' + X(ex.m) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="#F56600" stroke-width="2.5" stroke-dasharray="6 5"/>' +
+         '<circle cx="' + X(ex.m) + '" cy="' + Y(v) + '" r="8" fill="#F56600" stroke="#0B1B33" stroke-width="2"/>';
+    read = I('f') + '(' + ex.m + ') = ' + v + '. At ' + ex.m + ' minutes, the plane is ' + v + ' feet from the gate.';
+  } else {
+    var sol = planeSolve(ex.c);
+    s += '<line x1="' + X(0) + '" x2="' + X(18) + '" y1="' + Y(ex.c) + '" y2="' + Y(ex.c) + '" stroke="#F56600" stroke-width="2.5" stroke-dasharray="6 5"/>';
+    sol.ivs.forEach(function(iv){ s += '<line x1="' + X(iv[0]) + '" x2="' + X(iv[1]) + '" y1="' + Y(ex.c) + '" y2="' + Y(ex.c) + '" stroke="#F56600" stroke-width="7" stroke-linecap="round"/>'; });
+    sol.pts.forEach(function(x){
+      s += '<line x1="' + X(x) + '" x2="' + X(x) + '" y1="' + Y(ex.c) + '" y2="' + Y(0) + '" stroke="#F56600" stroke-width="2.5" stroke-dasharray="6 5"/>' +
+           '<circle cx="' + X(x) + '" cy="' + Y(ex.c) + '" r="8" fill="#F56600" stroke="#0B1B33" stroke-width="2"/>';
+    });
+    var items = sol.pts.map(function(x){ return I('m') + ' is ' + fmtNum(x); })
+      .concat(sol.ivs.map(function(iv){ return I('m') + ' is any value from ' + iv[0] + ' to ' + iv[1] + ' (the flat part)'; }));
+    read = I('f') + '(' + I('m') + ') = ' + ex.c + ' when ' + items.join(', and when ') + '.' +
+      (items.length > 1 || sol.ivs.length ? ' One output can have more than one input.' : '');
+  }
+  svg.innerHTML = s;
+  var r = document.getElementById('exRead'); if(r) r.innerHTML = read;
+  var mv = document.getElementById('exMv'); if(mv) mv.textContent = ex.m;
+}
+
+/* ---------- review view ---------- */
+function rvNavHTML(){
+  var h = '';
+  REVIEW.forEach(function(t, i){
+    var done = !!S.reviewed[t.id], here = i === cur.rv.topic;
+    h += '<button class="chip" data-act="rv-topic" data-i="' + i + '" aria-current="' + here + '">' + (i + 1) + '. ' + t.short +
+         (done ? ' <span class="tick" aria-hidden="true">\u2713</span><span class="sr">(reviewed)</span>' : '') + '</button>';
+  });
+  return h;
+}
+function rvCountText(){ return reviewedCount() + ' of ' + REVIEW.length + ' topics reviewed. Finish a topic’s quick checks to mark it.'; }
+function updateRvChrome(){
+  var n = document.getElementById('rvNav'); if(n) n.innerHTML = rvNavHTML();
+  var c = document.getElementById('rvCount'); if(c) c.textContent = rvCountText();
+}
+function reviewHTML(){
+  var ti = cur.rv.topic, t = REVIEW[ti], ret = cur.rvReturn;
+  var h = '<div class="rv-head">' +
+    (ret ? '<div class="row"><button class="btn small" data-act="rv-back">Back to the escape room</button></div>' : '') +
+    '<h1 class="rv-title">Unit 5 review: Functions</h1>' +
+    '<p class="sub">Study first, then practice. Each topic has key ideas, a worked example, and a quick check.' + (ret ? ' Your escape room clock is paused while you read.' : ' When you feel ready, practice in the escape room.') + '</p></div>' +
+    '<nav class="rv-nav" id="rvNav" aria-label="Review topics">' + rvNavHTML() + '</nav>' +
+    '<p class="rv-count" id="rvCount">' + rvCountText() + '</p>' +
+    '<section class="rv-topic"><h2 id="heading" tabindex="-1">' + (ti + 1) + '. ' + t.title + '</h2><p class="lead">' + t.lead + '</p>' +
+    '<div class="panel ideas"><h3>Key ideas</h3><ul>' + t.ideas.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul></div>' +
+    (t.explorer ? explorerHTML() : '') +
+    '<div class="panel example"><h3>Worked example</h3>' + t.example + '</div>' +
+    '<div class="qcs"><h3>Quick check</h3>' + (t.checkFig ? figHTML({fig:t.checkFig}) : '');
+  t.checks.forEach(function(c, i){ h += '<div class="panel qc" id="qc-' + qcKey(t, i) + '">' + qcHTML(t, i) + '</div>'; });
+  h += '</div><div class="rv-foot">' +
+    (ti > 0 ? '<button class="btn" data-act="rv-prev">Previous topic</button>' : '<span></span>') +
+    (ti < REVIEW.length - 1 ? '<button class="btn primary" data-act="rv-next">Next topic</button>' : '') +
+    '</div></section>' +
+    '<div class="panel cta"><div><h3>Ready to practice?</h3><p>The escape room mixes questions from all five topics.' + (ret ? '' : ' You can come back to this review any time.') + '</p></div>' +
+    '<button class="btn primary" data-act="rv-start">' + (ret ? 'Back to the escape room' : 'Start the escape room') + '</button></div>';
+  return h;
+}
+function finishReview(){
+  var ret = cur.rvReturn; cur.rvReturn = null;
+  if(ret){ go(ret === 'room' && !roomById(cur.room) ? 'hub' : ret); return; }
+  go(S.begun ? 'hub' : 'start');
+}
+
 /* ---------- render ---------- */
 var lastScreenKey = '';
 function render(focusMode){
   var v = $('#view'), scr = S.screen;
   if(scr === 'room' && !roomById(cur.room)) { S.screen = scr = 'hub'; }
-  var html = scr === 'start' ? startHTML() : scr === 'hub' ? hubHTML() : scr === 'room' ? roomHTML() : scr === 'door' ? doorHTML(cur.doorMsg) : escapedHTML();
+  var html = scr === 'review' ? reviewHTML() : scr === 'start' ? startHTML() : scr === 'hub' ? hubHTML() : scr === 'room' ? roomHTML() : scr === 'door' ? doorHTML(cur.doorMsg) : escapedHTML();
   v.innerHTML = html;
+  if(scr === 'review' && REVIEW[cur.rv.topic].explorer) drawExplorer();
   var playing = scr === 'hub' || scr === 'room' || scr === 'door';
   $('#hud').hidden = !(playing || scr === 'escaped');
   $('#btnMap').hidden = !(scr === 'room' || scr === 'door');
+  $('#btnReview').hidden = !playing;
   updateHud();
-  var key = scr + ':' + (scr === 'room' ? cur.room + (cur.solved ? 's' + cur.solvedIdx : '') + (firstOpen(roomById(cur.room) || ROOMS[0])) : '');
+  var key = scr + ':' + (scr === 'review' ? cur.rv.topic : '') + (scr === 'room' ? cur.room + (cur.solved ? 's' + cur.solvedIdx : '') + (firstOpen(roomById(cur.room) || ROOMS[0])) : '');
   if(key !== lastScreenKey){
     lastScreenKey = key;
     var hd = $('#heading'); if(hd){ hd.focus({preventScroll:true}); }
@@ -681,7 +1021,7 @@ function tryDoor(code){
 }
 function resetAll(keepName){
   var nm = keepName ? S.name : '';
-  S = fresh(); S.name = nm; cur = {room:null, resp:null, fb:null, solved:false, solvedIdx:0, armed:false};
+  S = fresh(); S.name = nm; cur = newCur(); S.screen = 'start';
   lastScreenKey = ''; save(); render();
 }
 
@@ -694,6 +1034,16 @@ view.addEventListener('click', function(e){
   else if(a === 'restart'){
     if(cur.armed){ resetAll(true); } else { cur.armed = true; render(); setTimeout(function(){ cur.armed = false; if(S.screen === 'start') render(); }, 3500); }
   }
+  else if(a === 'review'){ cur.rvReturn = null; go('review'); }
+  else if(a === 'reviewtopic'){
+    cur.rvReturn = 'room'; var ti = topicIndex(ROOM_TOPIC[cur.room]); if(ti >= 0) cur.rv.topic = ti; go('review');
+  }
+  else if(a === 'rv-topic'){ cur.rv.topic = +b.dataset.i; render(); }
+  else if(a === 'rv-prev'){ cur.rv.topic = Math.max(0, cur.rv.topic - 1); render(); }
+  else if(a === 'rv-next'){ cur.rv.topic = Math.min(REVIEW.length - 1, cur.rv.topic + 1); render(); }
+  else if(a === 'rv-back' || a === 'rv-start') finishReview();
+  else if(a === 'qc-check') qcCheck(b.dataset.key);
+  else if(a === 'qc-show') qcShow(b.dataset.key);
   else if(a === 'enter') enterRoom(b.dataset.room);
   else if(a === 'check') doCheck();
   else if(a === 'reveal') doReveal();
@@ -705,7 +1055,11 @@ view.addEventListener('click', function(e){
   }
 });
 view.addEventListener('change', function(e){
-  var t = e.target; if(t.name !== 'ans') return;
+  var t = e.target;
+  if(t.name && t.name.indexOf('qc-') === 0){ var qs = qcState(t.name.slice(3)); qs.resp = t.value; return; }
+  if(t.name === 'exmode'){ cur.ex.mode = t.value; document.getElementById('exOut').hidden = t.value !== 'out'; document.getElementById('exIn').hidden = t.value !== 'in'; drawExplorer(); return; }
+  if(t.id === 'exC'){ cur.ex.c = +t.value; drawExplorer(); return; }
+  if(t.name !== 'ans') return;
   if(t.type === 'radio'){ cur.resp = t.value; }
   else if(t.type === 'checkbox'){
     var arr = Array.isArray(cur.resp) ? cur.resp.slice() : [];
@@ -715,20 +1069,31 @@ view.addEventListener('change', function(e){
     cur.resp = arr;
   }
 });
-view.addEventListener('input', function(e){ if(e.target.id === 'ans') cur.resp = e.target.value; });
+view.addEventListener('input', function(e){
+  var t = e.target;
+  if(t.id === 'ans') cur.resp = t.value;
+  else if(t.dataset && t.dataset.qcnum){ qcState(t.dataset.qcnum).resp = t.value; }
+  else if(t.id === 'exM'){ cur.ex.m = +t.value; drawExplorer(); }
+});
 view.addEventListener('keydown', function(e){
   if(e.key === 'Enter' && e.target.id === 'ans'){ e.preventDefault(); doCheck(); }
+  if(e.key === 'Enter' && e.target.dataset && e.target.dataset.qcnum){ e.preventDefault(); qcCheck(e.target.dataset.qcnum); }
 });
 view.addEventListener('submit', function(e){
   var f = e.target.dataset.form; if(!f) return;
   e.preventDefault();
   if(f === 'begin'){
-    S.name = ($('#nm').value || '').trim(); S.screen = 'hub'; S.sec = 0; save(); render();
+    S.name = ($('#nm').value || '').trim(); S.screen = 'hub'; S.sec = 0; S.begun = true; save(); render();
   } else if(f === 'door'){
     tryDoor(($('#code').value || '').replace(/\D/g, ''));
   }
 });
 $('#btnMap').addEventListener('click', function(){ go('hub'); });
+$('#btnReview').addEventListener('click', function(){
+  cur.rvReturn = S.screen;
+  if(S.screen === 'room'){ var ti = topicIndex(ROOM_TOPIC[cur.room]); if(ti >= 0) cur.rv.topic = ti; }
+  go('review');
+});
 
 setInterval(function(){
   if(document.hidden) return;
@@ -738,7 +1103,7 @@ setInterval(function(){
   }
 }, 1000);
 
-if(window.__TEST__){ window.__t = {R:R, ROOMS:ROOMS, S:function(){ return S; }, build:build, answerText:answerText, CONFIG:CONFIG, cur:function(){ return cur; }}; }
+if(window.__TEST__){ window.__t = {REVIEW:REVIEW, R:R, ROOMS:ROOMS, S:function(){ return S; }, build:build, answerText:answerText, CONFIG:CONFIG, cur:function(){ return cur; }}; }
 
 if(S.screen === 'room'){ cur.room = S.curRoom; }
 render();
